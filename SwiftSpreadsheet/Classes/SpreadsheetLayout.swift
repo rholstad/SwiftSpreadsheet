@@ -46,6 +46,8 @@ public protocol SpreadsheetLayoutDelegate: class {
      - Returns: Tuple representing the header and the footer height of the spreadsheet layout. If you return `nil` for the tuple's element(s) the respective header/footer will not be drawn by the layout.
      */
     func heightsOfHeaderAndFooterColumnsInSpreadsheet(layout: SpreadsheetLayout) -> (headerHeight: CGFloat?, footerHeight: CGFloat?)
+    
+    func customizeLayoutAttributes(_ attributes: SpreadsheetLayoutAttributes, for viewType: SpreadsheetLayout.ViewKindType)
 }
 
 extension UICollectionView {
@@ -56,6 +58,11 @@ extension UICollectionView {
         }
         self.reloadData()
     }
+}
+
+public class SpreadsheetLayoutAttributes: UICollectionViewLayoutAttributes {
+    public var text: String?
+    public var color: UIColor?
 }
 
 public class SpreadsheetLayout: UICollectionViewLayout {
@@ -84,7 +91,7 @@ public class SpreadsheetLayout: UICollectionViewLayout {
     fileprivate var topLeftGapSpaceLayoutAttributes: UICollectionViewLayoutAttributes?
     fileprivate var topRightGapSpaceLayoutAttributes: UICollectionViewLayoutAttributes?
     fileprivate var bottomLeftGapSpaceLayoutAttributes: UICollectionViewLayoutAttributes?
-    fileprivate var bottomRightGapSpaceLayoutAttributes: UICollectionViewLayoutAttributes?
+    fileprivate var bottomRightGapSpaceLayoutAttributes: SpreadsheetLayoutAttributes?
     
     fileprivate var contentHeight: CGFloat = 0
     fileprivate var contentWidth: CGFloat = 0
@@ -239,12 +246,13 @@ public class SpreadsheetLayout: UICollectionViewLayout {
                 }
                 
                 if let bottomColumnHeight = headerFooterTuple.footerHeight , self.decorationViewSet.bottomRight {
-                    let bottomRightAttributes = UICollectionViewLayoutAttributes(forDecorationViewOfKind: ViewKindType.decorationBottomRight.rawValue, with: IndexPath(item: 0, section: numberOfSections - 1))
+                    let bottomRightAttributes = SpreadsheetLayoutAttributes(forDecorationViewOfKind: ViewKindType.decorationBottomRight.rawValue, with: IndexPath(item: 0, section: numberOfSections - 1))
                     
                     let xVal = self.stickyRightRowHeader ? min(cv.bounds.width - rightRowWidth, currentCellXoffset) : currentCellXoffset
                     let yVal = self.stickyBottomColumnFooter ? min(cv.bounds.height - bottomColumnHeight, currentCellYoffset) : currentCellYoffset
                     
                     bottomRightAttributes.frame = CGRect(x: xVal, y: yVal, width: rightRowWidth, height: bottomColumnHeight)
+                    delegate?.customizeLayoutAttributes(bottomRightAttributes, for: .decorationBottomRight)
                     self.bottomRightGapSpaceLayoutAttributes = bottomRightAttributes
                 }
                 
